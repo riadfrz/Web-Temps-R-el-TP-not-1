@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
+import { createOrder, parseNewOrder } from "../services/orders";
 
 export const api = Router();
 
@@ -14,6 +15,12 @@ api.get("/products", async (_req, res) => {
 
 api.get("/orders", async (_req, res) => {
   res.json(await getOrders());
+});
+
+api.post("/orders", async (req, res) => {
+  const body: unknown = req.body;
+  const order = await createOrder(parseNewOrder(body));
+  res.status(201).json(order);
 });
 
 api.get("/orders/:id", async (req, res) => {
