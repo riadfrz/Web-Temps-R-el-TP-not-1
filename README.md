@@ -50,3 +50,10 @@ Fin de suivi : quand la commande est livrée ou annulée, le serveur termine le 
 
 Heartbeat : un commentaire `: ping` est envoyé toutes les 15 s sur chaque flux, pour qu'un proxy coupant les connexions inactives au bout de 30 s ne ferme pas la connexion.
 
+## État d'avancement
+
+- [x] F1 à F10
+- [ ] B1 — récupération des événements manqués (non réalisé)
+- [x] B2 — fin du flux après livraison/annulation
+- [x] B3 — délai de reconnexion de 5 s
+- [x] B4 — connexion maintenue derrière un proxy (heartbeat)
