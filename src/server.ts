@@ -1,4 +1,5 @@
 import express from "express";
+import { seed } from "./seed";
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -9,6 +10,14 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+async function start(): Promise<void> {
+  await seed();
+  app.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
+  });
+}
+
+start().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
 });
