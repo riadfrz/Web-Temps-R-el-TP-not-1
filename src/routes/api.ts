@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
-import { advanceOrder, createOrder, parseNewOrder } from "../services/orders";
+import { advanceOrder, cancelOrder, createOrder, parseNewOrder } from "../services/orders";
 
 export const api = Router();
 
@@ -32,4 +32,8 @@ api.get("/orders/:id", async (req, res) => {
 
 api.post("/orders/:id/advance", async (req, res) => {
   res.json(await advanceOrder(parseId(req.params.id)));
+});
+
+api.post("/orders/:id/cancel", async (req, res) => {
+  res.json(await cancelOrder(parseId(req.params.id)));
 });

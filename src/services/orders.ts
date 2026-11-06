@@ -109,3 +109,15 @@ export function advanceOrder(id: number): Promise<Order> {
     return applyTransition(order, next);
   });
 }
+
+export function cancelOrder(id: number): Promise<Order> {
+  return serialize(async () => {
+    const order = await loadOrder(id);
+    if (order.status !== "preparing") {
+      throw new HttpError(409, `Order ${id} is ${order.status} and cannot be cancelled`);
+    }
+    const product = await getProduct(order.productId);
+    if (product) await saveProduct({ ...product, stock: product.stock + order.quantity });
+    return applyTransition(order, "cancelled");
+  });
+}
