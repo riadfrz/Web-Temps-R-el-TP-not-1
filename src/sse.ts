@@ -9,6 +9,8 @@ type Subscriber = {
   orderId?: number;
 };
 
+const RETRY_MS = 5_000;
+
 const subscribers = new Set<Subscriber>();
 
 export function writeEvent(res: Response, event: EventName, data: unknown, id?: string): void {
@@ -27,6 +29,7 @@ export function subscribe(req: Request, res: Response, orderId?: number): Subscr
     "X-Accel-Buffering": "no",
   });
   res.flushHeaders();
+  res.write(`retry: ${RETRY_MS}\n\n`);
 
   const subscriber: Subscriber = { res, orderId };
   subscribers.add(subscriber);

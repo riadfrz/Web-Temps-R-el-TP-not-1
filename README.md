@@ -8,10 +8,14 @@ Dépôt Git : https://github.com/riadfrz/Web-Temps-R-el-TP-not-1
 docker compose up --build -d
 ```
 
-- Boutique : http://localhost:3000/
-- Suivi d'une commande : http://localhost:3000/track.html?id=1
+- Boutique : http://localhost:3000/ (créer une commande, puis lien « Suivre »)
+- Suivi d'une commande : `http://localhost:3000/track.html?id=<id>` avec l'id d'une commande existante (aucune commande au premier démarrage)
 
-Données persistées avec JsonDB dans le volume Docker `data` (réinitialiser : `docker compose down -v`).
+Données persistées avec JsonDB dans le volume Docker `data` (réinitialiser : `docker compose down -v`). Au premier démarrage : 2 utilisateurs, 3 produits.
+
+## Livraison automatique
+
+Une commande expédiée passe seule au statut `delivered` 20 secondes après son expédition, et l'événement est poussé en SSE. La date d'expédition est persistée : après un redémarrage du serveur, la livraison est reprogrammée avec le délai restant (immédiate si le délai est dépassé). Une livraison manuelle avant les 20 s annule le minuteur.
 
 ## API REST
 
@@ -38,5 +42,7 @@ Les erreurs renvoient `{ "error": "message" }`.
 | `order-cancelled` | `Order` |
 | `stock-updated` | `Product` |
 
-`/api/orders/:id/events` ne reçoit que les événements de cette commande (tri côté serveur).
+`/api/orders/:id/events` ne reçoit que les événements de cette commande (tri côté serveur). Un abonné est retiré dès que sa connexion se ferme.
+
+Reconnexion : chaque flux commence par `retry: 5000`, le navigateur attend 5 s avant chaque tentative de reconnexion.
 
