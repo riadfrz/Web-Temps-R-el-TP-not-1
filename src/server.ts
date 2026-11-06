@@ -1,4 +1,6 @@
 import express from "express";
+import { errorHandler } from "./http";
+import { api } from "./routes/api";
 import { seed } from "./seed";
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -9,6 +11,9 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api", api);
+app.use(errorHandler);
 
 async function start(): Promise<void> {
   await seed();
