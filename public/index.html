@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boutique — commandes</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.15rem; margin-top: 2rem; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid #eee; }
+      th { color: #666; font-weight: 500; }
+      form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; }
+      label { display: flex; flex-direction: column; font-size: 0.85rem; color: #666; gap: 0.2rem; }
+      select, input, button { font: inherit; padding: 0.3rem 0.5rem; }
+      .status { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; background: #eee; }
+      .status.preparing { background: #fff3cd; color: #7a5a00; }
+      .status.shipped { background: #d6e9ff; color: #0b4f9c; }
+      .status.delivered { background: #d4f5dd; color: #186a35; }
+      .status.cancelled { background: #fbdada; color: #8a1c1c; }
+      #message { min-height: 1.2em; font-size: 0.9rem; }
+      .error { color: #8a1c1c; }
+    </style>
+  </head>
+  <body>
+    <h1>Boutique — suivi des commandes</h1>
+
+    <h2>Produits</h2>
+    <table>
+      <thead><tr><th>#</th><th>Produit</th><th>Stock</th></tr></thead>
+      <tbody id="products"></tbody>
+    </table>
+
+    <h2>Nouvelle commande</h2>
+    <form id="order-form">
+      <label>Client <select name="userId" id="users"></select></label>
+      <label>Produit <select name="productId" id="product-select"></select></label>
+      <label>Quantité <input name="quantity" type="number" min="1" value="1" /></label>
+      <button type="submit">Commander</button>
+    </form>
+    <p id="message"></p>
+
+    <h2>Commandes</h2>
+    <table>
+      <thead><tr><th>#</th><th>Client</th><th>Produit</th><th>Qté</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="orders"></tbody>
+    </table>
+
+    <script src="index.js"></script>
+  </body>
+</html>
