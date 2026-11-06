@@ -10,6 +10,8 @@ type Subscriber = {
 };
 
 const RETRY_MS = 5_000;
+// Below the 30 s idle timeout of intermediate proxies.
+const HEARTBEAT_MS = 15_000;
 
 const subscribers = new Set<Subscriber>();
 
@@ -35,7 +37,10 @@ export function subscribe(req: Request, res: Response, orderId?: number): Subscr
   subscribers.add(subscriber);
   console.log(`SSE subscriber added (${subscribers.size} connected)`);
 
+  const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
+
   req.on("close", () => {
+    clearInterval(heartbeat);
     subscribers.delete(subscriber);
     console.log(`SSE subscriber removed (${subscribers.size} connected)`);
   });
