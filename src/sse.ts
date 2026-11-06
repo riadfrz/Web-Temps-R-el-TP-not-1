@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 
 export type OrderEvent = "order-created" | "order-status" | "order-cancelled";
 export type StockEvent = "stock-updated";
@@ -23,7 +23,7 @@ export function writeEvent(res: Response, event: EventName, data: unknown, id?: 
   res.write(frame);
 }
 
-export function subscribe(req: Request, res: Response, orderId?: number): Subscriber {
+export function subscribe(res: Response, orderId?: number): Subscriber {
   res.status(200).set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -39,7 +39,8 @@ export function subscribe(req: Request, res: Response, orderId?: number): Subscr
 
   const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
 
-  req.on("close", () => {
+  // Fires on client disconnect and when the server ends the stream.
+  res.on("close", () => {
     clearInterval(heartbeat);
     subscribers.delete(subscriber);
     console.log(`SSE subscriber removed (${subscribers.size} connected)`);
@@ -54,5 +55,11 @@ export function broadcast(event: EventName, data: unknown, orderId?: number): vo
     if (subscriber.orderId === undefined || subscriber.orderId === orderId) {
       writeEvent(subscriber.res, event, data);
     }
+  }
+}
+
+export function endOrderStreams(orderId: number): void {
+  for (const subscriber of subscribers) {
+    if (subscriber.orderId === orderId) subscriber.res.end();
   }
 }

@@ -11,7 +11,7 @@ import {
   setShippedAt,
 } from "../db";
 import { HttpError } from "../http";
-import { broadcast, type OrderEvent } from "../sse";
+import { broadcast, endOrderStreams, type OrderEvent } from "../sse";
 import type { Order, Product, Status } from "../types";
 
 type NewOrder = Pick<Order, "userId" | "productId" | "quantity">;
@@ -32,6 +32,10 @@ function serialize<T>(task: () => Promise<T>): Promise<T> {
   const result = queue.then(task);
   queue = result.catch(() => undefined);
   return result;
+}
+
+export function isFinal(status: Status): boolean {
+  return status === "delivered" || status === "cancelled";
 }
 
 function emitOrder(event: OrderEvent, order: Order): void {
@@ -123,6 +127,7 @@ async function applyTransition(order: Order, next: Status): Promise<Order> {
     await deleteShippedAt(order.id);
   }
   emitOrder(next === "cancelled" ? "order-cancelled" : "order-status", updated);
+  if (isFinal(next)) endOrderStreams(order.id);
   return updated;
 }
 

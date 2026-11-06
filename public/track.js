@@ -5,6 +5,8 @@ const STATUS_LABELS = {
   cancelled: "Annulée",
 };
 
+const FINAL_STATUSES = ["delivered", "cancelled"];
+
 const $ = (id) => document.getElementById(id);
 const orderId = new URLSearchParams(location.search).get("id");
 
@@ -45,6 +47,10 @@ function connect() {
     if (!productLoaded) {
       productLoaded = true;
       showProductName(order.productId);
+    }
+    if (FINAL_STATUSES.includes(order.status)) {
+      source.close();
+      setConnection("Suivi terminé");
     }
   };
 

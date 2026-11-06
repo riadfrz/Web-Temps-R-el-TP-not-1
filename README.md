@@ -46,5 +46,7 @@ Les erreurs renvoient `{ "error": "message" }`.
 
 Reconnexion : chaque flux commence par `retry: 5000`, le navigateur attend 5 s avant chaque tentative de reconnexion.
 
+Fin de suivi : quand la commande est livrée ou annulée, le serveur termine le flux de la commande et la page de suivi ferme son `EventSource` : plus aucune reconnexion.
+
 Heartbeat : un commentaire `: ping` est envoyé toutes les 15 s sur chaque flux, pour qu'un proxy coupant les connexions inactives au bout de 30 s ne ferme pas la connexion.
 

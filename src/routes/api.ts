@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
-import { advanceOrder, cancelOrder, createOrder, parseNewOrder } from "../services/orders";
+import { advanceOrder, cancelOrder, createOrder, isFinal, parseNewOrder } from "../services/orders";
 import { subscribe, writeEvent } from "../sse";
 
 export const api = Router();
@@ -39,16 +39,18 @@ api.post("/orders/:id/cancel", async (req, res) => {
   res.json(await cancelOrder(parseId(req.params.id)));
 });
 
-api.get("/events", (req, res) => {
-  subscribe(req, res);
+api.get("/events", (_req, res) => {
+  subscribe(res);
 });
 
 api.get("/orders/:id/events", async (req, res) => {
   const id = parseId(req.params.id);
   if (!(await getOrder(id))) throw new HttpError(404, `Order ${id} not found`);
 
-  subscribe(req, res, id);
+  subscribe(res, id);
   // Read after subscribing so no change can slip between the snapshot and the live events.
   const order = await getOrder(id);
-  if (order) writeEvent(res, "order-status", order);
+  if (!order) return;
+  writeEvent(res, "order-status", order);
+  if (isFinal(order.status)) res.end();
 });
