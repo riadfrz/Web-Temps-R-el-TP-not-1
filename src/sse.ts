@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
 
+export type OrderEvent = "order-created" | "order-status" | "order-cancelled";
+export type StockEvent = "stock-updated";
+export type EventName = OrderEvent | StockEvent;
+
 type Subscriber = {
   res: Response;
   orderId?: number;
@@ -7,7 +11,7 @@ type Subscriber = {
 
 const subscribers = new Set<Subscriber>();
 
-export function writeEvent(res: Response, event: string, data: unknown, id?: string): void {
+export function writeEvent(res: Response, event: EventName, data: unknown, id?: string): void {
   let frame = "";
   if (id !== undefined) frame += `id: ${id}\n`;
   frame += `event: ${event}\n`;
@@ -37,7 +41,7 @@ export function subscribe(req: Request, res: Response, orderId?: number): Subscr
 }
 
 // Unfiltered subscribers receive everything; filtered ones only their order's events.
-export function broadcast(event: string, data: unknown, orderId?: number): void {
+export function broadcast(event: EventName, data: unknown, orderId?: number): void {
   for (const subscriber of subscribers) {
     if (subscriber.orderId === undefined || subscriber.orderId === orderId) {
       writeEvent(subscriber.res, event, data);

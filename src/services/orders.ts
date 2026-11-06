@@ -11,7 +11,8 @@ import {
   setShippedAt,
 } from "../db";
 import { HttpError } from "../http";
-import type { Order, Status } from "../types";
+import { broadcast, type OrderEvent } from "../sse";
+import type { Order, Product, Status } from "../types";
 
 type NewOrder = Pick<Order, "userId" | "productId" | "quantity">;
 
@@ -31,6 +32,20 @@ function serialize<T>(task: () => Promise<T>): Promise<T> {
   const result = queue.then(task);
   queue = result.catch(() => undefined);
   return result;
+}
+
+function emitOrder(event: OrderEvent, order: Order): void {
+  broadcast(event, order, order.id);
+}
+
+function emitStock(product: Product): void {
+  broadcast("stock-updated", product);
+}
+
+async function updateStock(product: Product, delta: number): Promise<Product> {
+  const updated: Product = { ...product, stock: product.stock + delta };
+  await saveProduct(updated);
+  return updated;
 }
 
 function isPositiveInt(value: unknown): value is number {
@@ -60,7 +75,7 @@ export function createOrder({ userId, productId, quantity }: NewOrder): Promise<
       throw new HttpError(409, `Insufficient stock for product ${productId}: ${product.stock} available`);
     }
 
-    await saveProduct({ ...product, stock: product.stock - quantity });
+    const updatedProduct = await updateStock(product, -quantity);
     const order: Order = {
       id: await nextOrderId(),
       userId,
@@ -70,6 +85,8 @@ export function createOrder({ userId, productId, quantity }: NewOrder): Promise<
       createdAt: new Date().toISOString(),
     };
     await saveOrder(order);
+    emitOrder("order-created", order);
+    emitStock(updatedProduct);
     return order;
   });
 }
@@ -105,6 +122,7 @@ async function applyTransition(order: Order, next: Status): Promise<Order> {
     clearDeliveryTimer(order.id);
     await deleteShippedAt(order.id);
   }
+  emitOrder(next === "cancelled" ? "order-cancelled" : "order-status", updated);
   return updated;
 }
 
@@ -143,7 +161,9 @@ export function cancelOrder(id: number): Promise<Order> {
       throw new HttpError(409, `Order ${id} is ${order.status} and cannot be cancelled`);
     }
     const product = await getProduct(order.productId);
-    if (product) await saveProduct({ ...product, stock: product.stock + order.quantity });
-    return applyTransition(order, "cancelled");
+    const restored = product ? await updateStock(product, order.quantity) : undefined;
+    const cancelled = await applyTransition(order, "cancelled");
+    if (restored) emitStock(restored);
+    return cancelled;
   });
 }
