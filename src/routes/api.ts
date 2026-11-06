@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
 import { advanceOrder, cancelOrder, createOrder, parseNewOrder } from "../services/orders";
-import { subscribe } from "../sse";
+import { subscribe, writeEvent } from "../sse";
 
 export const api = Router();
 
@@ -41,4 +41,14 @@ api.post("/orders/:id/cancel", async (req, res) => {
 
 api.get("/events", (req, res) => {
   subscribe(req, res);
+});
+
+api.get("/orders/:id/events", async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!(await getOrder(id))) throw new HttpError(404, `Order ${id} not found`);
+
+  subscribe(req, res, id);
+  // Read after subscribing so no change can slip between the snapshot and the live events.
+  const order = await getOrder(id);
+  if (order) writeEvent(res, "order-status", order);
 });
