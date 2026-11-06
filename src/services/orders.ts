@@ -1,4 +1,15 @@
-import { getOrder, getProduct, getUser, nextOrderId, saveOrder, saveProduct } from "../db";
+import {
+  deleteShippedAt,
+  getOrder,
+  getOrders,
+  getProduct,
+  getShippedAt,
+  getUser,
+  nextOrderId,
+  saveOrder,
+  saveProduct,
+  setShippedAt,
+} from "../db";
 import { HttpError } from "../http";
 import type { Order, Status } from "../types";
 
@@ -87,9 +98,24 @@ function scheduleDelivery(id: number, delayMs: number): void {
 async function applyTransition(order: Order, next: Status): Promise<Order> {
   const updated: Order = { ...order, status: next };
   await saveOrder(updated);
-  if (next === "shipped") scheduleDelivery(order.id, DELIVERY_DELAY_MS);
-  else clearDeliveryTimer(order.id);
+  if (next === "shipped") {
+    await setShippedAt(order.id, new Date().toISOString());
+    scheduleDelivery(order.id, DELIVERY_DELAY_MS);
+  } else {
+    clearDeliveryTimer(order.id);
+    await deleteShippedAt(order.id);
+  }
   return updated;
+}
+
+export async function restoreDeliveries(): Promise<void> {
+  const shipped = (await getOrders()).filter((order) => order.status === "shipped");
+  for (const order of shipped) {
+    const shippedAt = await getShippedAt(order.id);
+    const elapsed = shippedAt ? Date.now() - Date.parse(shippedAt) : DELIVERY_DELAY_MS;
+    scheduleDelivery(order.id, Math.max(0, DELIVERY_DELAY_MS - elapsed));
+  }
+  if (shipped.length > 0) console.log(`Rescheduled delivery of ${shipped.length} shipped order(s)`);
 }
 
 function autoDeliver(id: number): Promise<void> {

@@ -31,6 +31,14 @@ export const getOrders = () => list<Order>("orders");
 export const getOrder = (id: number) => find<Order>("orders", id);
 export const saveOrder = (order: Order) => save("orders", order);
 
+// Shipping timestamps are kept outside Order so the provided type stays unchanged.
+export const getShippedAt = (orderId: number) =>
+  db.getObjectDefault<string | undefined>(`/shippedAt/${orderId}`, undefined);
+export const setShippedAt = (orderId: number, date: string) => db.push(`/shippedAt/${orderId}`, date, true);
+export async function deleteShippedAt(orderId: number): Promise<void> {
+  if (await db.exists(`/shippedAt/${orderId}`)) await db.delete(`/shippedAt/${orderId}`);
+}
+
 export async function nextOrderId(): Promise<number> {
   const id = (await db.getObjectDefault<number>("/nextOrderId", 0)) + 1;
   await db.push("/nextOrderId", id, true);

@@ -2,6 +2,7 @@ import express from "express";
 import { errorHandler } from "./http";
 import { api } from "./routes/api";
 import { seed } from "./seed";
+import { restoreDeliveries } from "./services/orders";
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -17,6 +18,7 @@ app.use(errorHandler);
 
 async function start(): Promise<void> {
   await seed();
+  await restoreDeliveries();
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
   });
