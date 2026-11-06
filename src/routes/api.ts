@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
 import { advanceOrder, cancelOrder, createOrder, parseNewOrder } from "../services/orders";
+import { subscribe } from "../sse";
 
 export const api = Router();
 
@@ -36,4 +37,8 @@ api.post("/orders/:id/advance", async (req, res) => {
 
 api.post("/orders/:id/cancel", async (req, res) => {
   res.json(await cancelOrder(parseId(req.params.id)));
+});
+
+api.get("/events", (req, res) => {
+  subscribe(req, res);
 });
