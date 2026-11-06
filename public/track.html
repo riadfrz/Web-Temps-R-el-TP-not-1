@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suivi de commande</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+      h1 { font-size: 1.5rem; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem 1.25rem; }
+      dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0; }
+      dt { color: #666; }
+      dd { margin: 0; }
+      .status { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 600; background: #eee; }
+      .status.preparing { background: #fff3cd; color: #7a5a00; }
+      .status.shipped { background: #d6e9ff; color: #0b4f9c; }
+      .status.delivered { background: #d4f5dd; color: #186a35; }
+      .status.cancelled { background: #fbdada; color: #8a1c1c; }
+      #connection { margin-top: 1rem; font-size: 0.9rem; color: #666; }
+      #log { margin-top: 1rem; padding-left: 1.2rem; font-size: 0.9rem; color: #444; }
+      .error { color: #8a1c1c; }
+    </style>
+  </head>
+  <body>
+    <h1>Suivi de commande <span id="order-id"></span></h1>
+    <div class="card">
+      <dl>
+        <dt>Statut</dt>
+        <dd><span id="status" class="status">—</span></dd>
+        <dt>Produit</dt>
+        <dd id="product">—</dd>
+        <dt>Quantité</dt>
+        <dd id="quantity">—</dd>
+        <dt>Créée le</dt>
+        <dd id="created-at">—</dd>
+      </dl>
+    </div>
+    <p id="connection">Connexion…</p>
+    <ul id="log"></ul>
+    <script src="track.js"></script>
+  </body>
+</html>

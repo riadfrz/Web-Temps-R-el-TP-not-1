@@ -1,3 +1,4 @@
+import path from "node:path";
 import express from "express";
 import { errorHandler } from "./http";
 import { api } from "./routes/api";
@@ -8,6 +9,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
