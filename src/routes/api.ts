@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getOrder, getOrders, getProducts, getUsers } from "../db";
 import { HttpError, parseId } from "../http";
-import { createOrder, parseNewOrder } from "../services/orders";
+import { advanceOrder, createOrder, parseNewOrder } from "../services/orders";
 
 export const api = Router();
 
@@ -28,4 +28,8 @@ api.get("/orders/:id", async (req, res) => {
   const order = await getOrder(id);
   if (!order) throw new HttpError(404, `Order ${id} not found`);
   res.json(order);
+});
+
+api.post("/orders/:id/advance", async (req, res) => {
+  res.json(await advanceOrder(parseId(req.params.id)));
 });

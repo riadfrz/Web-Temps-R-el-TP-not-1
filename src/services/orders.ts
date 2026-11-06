@@ -1,8 +1,17 @@
-import { getProduct, getUser, nextOrderId, saveOrder, saveProduct } from "../db";
+import { getOrder, getProduct, getUser, nextOrderId, saveOrder, saveProduct } from "../db";
 import { HttpError } from "../http";
-import type { Order } from "../types";
+import type { Order, Status } from "../types";
 
 type NewOrder = Pick<Order, "userId" | "productId" | "quantity">;
+
+const DELIVERY_DELAY_MS = 20_000;
+
+const NEXT_STATUS: Partial<Record<Status, Status>> = {
+  preparing: "shipped",
+  shipped: "delivered",
+};
+
+const deliveryTimers = new Map<number, NodeJS.Timeout>();
 
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -51,5 +60,52 @@ export function createOrder({ userId, productId, quantity }: NewOrder): Promise<
     };
     await saveOrder(order);
     return order;
+  });
+}
+
+async function loadOrder(id: number): Promise<Order> {
+  const order = await getOrder(id);
+  if (!order) throw new HttpError(404, `Order ${id} not found`);
+  return order;
+}
+
+function clearDeliveryTimer(id: number): void {
+  clearTimeout(deliveryTimers.get(id));
+  deliveryTimers.delete(id);
+}
+
+function scheduleDelivery(id: number, delayMs: number): void {
+  clearDeliveryTimer(id);
+  const timer = setTimeout(() => {
+    deliveryTimers.delete(id);
+    autoDeliver(id).catch((err: unknown) => console.error(err));
+  }, delayMs);
+  deliveryTimers.set(id, timer);
+}
+
+// Single place where an order's status changes; must run inside serialize().
+async function applyTransition(order: Order, next: Status): Promise<Order> {
+  const updated: Order = { ...order, status: next };
+  await saveOrder(updated);
+  if (next === "shipped") scheduleDelivery(order.id, DELIVERY_DELAY_MS);
+  else clearDeliveryTimer(order.id);
+  return updated;
+}
+
+function autoDeliver(id: number): Promise<void> {
+  return serialize(async () => {
+    const order = await getOrder(id);
+    // A manual advance may have delivered the order before the timer fired.
+    if (order?.status !== "shipped") return;
+    await applyTransition(order, "delivered");
+  });
+}
+
+export function advanceOrder(id: number): Promise<Order> {
+  return serialize(async () => {
+    const order = await loadOrder(id);
+    const next = NEXT_STATUS[order.status];
+    if (!next) throw new HttpError(409, `Order ${id} is ${order.status} and cannot advance`);
+    return applyTransition(order, next);
   });
 }
